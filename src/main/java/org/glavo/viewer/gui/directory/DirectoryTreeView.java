@@ -1,5 +1,6 @@
 package org.glavo.viewer.gui.directory;
 
+import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.ImageView;
@@ -7,6 +8,7 @@ import org.glavo.viewer.gui.MyTreeNode;
 import org.glavo.viewer.gui.jar.JarTreeNode;
 import org.glavo.viewer.gui.support.FileType;
 import org.glavo.viewer.gui.support.ImageUtils;
+import org.glavo.viewer.util.Log;
 
 import javax.swing.tree.TreeNode;
 import java.io.File;
@@ -19,7 +21,7 @@ import java.util.function.Consumer;
 public class DirectoryTreeView extends TreeView<MyTreeNode> {
 
     private final URL url;
-    private Consumer<String> openClassHandler;
+    Consumer<String> openClassHandler;
 
     public DirectoryTreeView(URL url, DirectoryTreeNode rootNode) {
         super(rootNode);
@@ -35,6 +37,7 @@ public class DirectoryTreeView extends TreeView<MyTreeNode> {
             }
         });
         rootNode.setGraphic(new ImageView(FileType.FOLDER.icon));
+        setContextMenu(new DirectoryTreeMenu(this));
     }
 
     public void setOpenClassHandler(Consumer<String> openClassHandler) {
@@ -42,25 +45,21 @@ public class DirectoryTreeView extends TreeView<MyTreeNode> {
     }
 
 
-    private String getSelectedClass() {
+    String getSelectedClass() {
         TreeItem<?> selected = getSelectionModel().getSelectedItem();
-        if (selected != null) {
+        String classUrl = null;
+        if (selected instanceof DirectoryTreeNode) {
             if (selected.toString().endsWith(".class")) {
-
-                String classUrl;
-                if (selected instanceof DirectoryTreeNode) {
-                    classUrl = "file:" + ((DirectoryTreeNode) selected).path;
-                } else if (selected instanceof JarTreeNode) {
-                    classUrl = "file:" + ((JarTreeNode) selected).path;
-                } else {
-                    return null;
-                }
+                classUrl = "file:" + ((DirectoryTreeNode) selected).path;
                 classUrl = classUrl.replace('\\', '/');
-                //System.out.println(classUrl);
-                return classUrl;
+            }
+        } else {
+            if (selected.toString().endsWith(".class")) {
+                JarTreeNode node = (JarTreeNode) selected;
+                classUrl = String.format("jar:file:%s!%s", node.jarPath, node.path).replace('\\', '/');
             }
         }
-        return null;
+        return classUrl;
     }
 
 }
